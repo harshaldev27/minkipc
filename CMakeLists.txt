@@ -8,6 +8,15 @@ option(BUILD_UNITTEST "Build unittest" FALSE)
 
 include(GNUInstallDirs)
 
+set(MINKIDLC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/minkidlc)
+
+file(DOWNLOAD
+  https://github.com/quic/mink-idl-compiler/releases/download/v0.2.0/idlc
+  ${MINKIDLC_BIN_DIR}/minkidlc
+)
+
+file(CHMOD ${MINKIDLC_BIN_DIR}/minkidlc PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+
 add_compile_options(
 	-Wall -Wextra -Werror -Wshadow -Wcast-align
 	-Wmissing-declarations -Wformat-security -Wmissing-noreturn

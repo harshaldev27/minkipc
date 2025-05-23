@@ -14,6 +14,45 @@ endif()
 
 include_directories(${QCBOR_INCLUDE_DIRS})
 
+# ''Build IDL Headers''.
+
+set (IDLS
+	idl/CRegisterListenerCBO
+	idl/IClientEnv
+	idl/ICredentials
+	idl/IIO
+	idl/IListenerCBO
+	idl/IMemRegion
+	idl/IRegisterListenerCBO
+)
+
+foreach(IDL ${IDLS})
+	foreach(VARIANT "" "--skel" )
+		if (VARIANT)
+			set(INVOKE _invoke)
+		else()
+			set(INVOKE "")
+		endif()
+
+		set(IDL_OUT ${CMAKE_CURRENT_SOURCE_DIR}/${IDL}${INVOKE}.h)
+		set(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${IDL}.idl)
+
+		add_custom_command(
+			OUTPUT  ${IDL_OUT}
+			DEPENDS ${INPUT}
+			COMMAND ${MINKIDLC_BIN_DIR}/minkidlc ${INPUT} -o ${IDL_OUT} ${VARIANT}
+		)
+
+		list(APPEND IDL_OUT_LIST ${IDL_OUT})
+	endforeach()
+endforeach()
+
+# A custom target to build the MINK-HEADERS which is always out of date.
+add_custom_target(
+        ${PROJECT_NAME}_MINKHEADERS ALL
+        DEPENDS ${IDL_OUT_LIST}
+)
+
 # ''Source files''.
 
 set(CMAKE_CXX_STANDARD 11)
@@ -28,6 +67,9 @@ set(SRC
 # ''Built binary''.
 
 add_executable(${PROJECT_NAME} ${SRC})
+
+# The binary depends on the MINK-IDLs
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_MINKHEADERS)
 
 # ''Headers and dependencies''.
 
