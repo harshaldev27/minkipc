@@ -147,14 +147,14 @@ static void test_smcinvoke_memobj_basic(Object rootEnv, Object appObj)
 	struct smcinvoke_priv_handle handle1 = { NULL, 0 };
 
 	// Get the memmgr test object
-	TEST_OK(IOpener_open(appObj, CTzEcoTestApp_TestMemManager_UID, &mmTestObj));
+	SILENT_OK(IOpener_open(appObj, CTzEcoTestApp_TestMemManager_UID, &mmTestObj));
 
 	// Get a memory object
-	TEST_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj));
+	SILENT_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj));
 	TEST_FALSE(Object_isNull(memObj));
 
 	// Get address and size of backing memory in handle
-	TEST_OK(MinkCom_getMemoryObjectInfo(memObj, &handle.addr, &handle.size));
+	SILENT_OK(MinkCom_getMemoryObjectInfo(memObj, &handle.addr, &handle.size));
 	LOGD_PRINT("addr = %p, size = 0x%lx\n", handle.addr, handle.size);
 
 	// Write to the memory
@@ -164,27 +164,29 @@ static void test_smcinvoke_memobj_basic(Object rootEnv, Object appObj)
 	LOGD_PRINT("send buf %lx\n", *(uint64_t*)alignedPtr);
 
 	// Send memory object to TA
-	TEST_OK(ITestMemManager_access(mmTestObj, memObj));
+	SILENT_OK(ITestMemManager_access(mmTestObj, memObj));
 
 	// Did the TA modify it?
 	LOGD_PRINT("return buf %lx\n", *(uint64_t*)alignedPtr);
 
-	TEST_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
+	SILENT_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
 
 	// Send the same memory object again (mapping information is not sent again)
 	*(uint64_t*)alignedPtr = ITestMemManager_TEST_PATTERN1;
 	LOGD_PRINT("Mem obj sent 2nd time: send buf %lx\n", *(uint64_t*)alignedPtr);
 
-	TEST_OK(ITestMemManager_access(mmTestObj, memObj));
+	SILENT_OK(ITestMemManager_access(mmTestObj, memObj));
 	LOGD_PRINT("Mem obj sent 2nd time: return buf %lx\n",
 		   *(uint64_t*)alignedPtr);
-	TEST_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
+	SILENT_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
+
+	MSGV("PASSED - Single Memory Object access Test.\n");
 
 	// Get another memory object
-	TEST_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj1));
+	SILENT_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj1));
 	TEST_FALSE(Object_isNull(memObj1));
 
-	TEST_OK(MinkCom_getMemoryObjectInfo(memObj1, &handle1.addr, &handle1.size));
+	SILENT_OK(MinkCom_getMemoryObjectInfo(memObj1, &handle1.addr, &handle1.size));
 	LOGD_PRINT("addr = %p, size = 0x%lx\n", handle1.addr, handle1.size);
 
 	// Send two memory objects and test TA access to both
@@ -195,21 +197,23 @@ static void test_smcinvoke_memobj_basic(Object rootEnv, Object appObj)
 	*(uint64_t*)alignedPtr1 = ITestMemManager_TEST_PATTERN1;
 	LOGD_PRINT("2nd mem obj: send buf %lx\n", *(uint64_t*)alignedPtr1);
 
-	TEST_OK(ITestMemManager_accessTwoMemObjects(mmTestObj, memObj, memObj1));
+	SILENT_OK(ITestMemManager_accessTwoMemObjects(mmTestObj, memObj, memObj1));
 
 	LOGD_PRINT("1st mem obj: return buf %lx\n", *(uint64_t*)alignedPtr);
 	LOGD_PRINT("2nd mem obj: return buf %lx\n", *(uint64_t*)alignedPtr1);
-	TEST_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
-	TEST_TRUE(*(uint64_t*)alignedPtr1 == ITestMemManager_TEST_PATTERN2);
+	SILENT_TRUE(*(uint64_t*)alignedPtr == ITestMemManager_TEST_PATTERN2);
+	SILENT_TRUE(*(uint64_t*)alignedPtr1 == ITestMemManager_TEST_PATTERN2);
 
 	Object_ASSIGN_NULL(memObj1);
 	Object_ASSIGN_NULL(memObj);
 
+	MSGV("PASSED - Two Memory Object access Test.\n");
+
 	// Send a memory object and release it immediately (without mapping)
-	TEST_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj));
+	SILENT_OK(MinkCom_getMemoryObject(rootEnv, SIZE_4KB, &memObj));
 	TEST_FALSE(Object_isNull(memObj));
 
-	TEST_OK(ITestMemManager_releaseImmediately(mmTestObj, memObj));
+	SILENT_OK(ITestMemManager_releaseImmediately(mmTestObj, memObj));
 
 	// Free the objects
 	Object_ASSIGN_NULL(memObj);
@@ -244,9 +248,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
 	// Check it happened as expected
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_call);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_call);
 
 	// Repeat with BI
 	cb->counter = 0;
@@ -259,9 +263,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callWithBuffer);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callWithBuffer);
 
 	// And with a buffer that doesn't match
 	cb->counter = 0;
@@ -270,9 +274,11 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_TRUE(ret == cb->retValueError);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callWithBuffer);
+	SILENT_TRUE(ret == cb->retValueError);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callWithBuffer);
+
+	MSGV("PASSED - Callback tests with Buffer inputs.\n");
 
 	// With another callable object as argument
 	SILENT_OK(CTestCallable_open(clientEnv, root, &oCB1));
@@ -282,9 +288,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callWithObject);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callWithObject);
 
 	// Now with a remote object as argument
 	cb->counter = 0;
@@ -293,9 +299,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_TRUE(ret = ITestCallable_ERROR_OBJECT_REMOTE);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callWithObject);
+	SILENT_TRUE(ret = ITestCallable_ERROR_OBJECT_REMOTE);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callWithObject);
 
 	Object_RELEASE_IF(oCB1);
 
@@ -303,12 +309,12 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	cb->counter = 0;
 	cb->op = -1;
 	ret = ITestCBack_set(oTCB, oCB);
-	TEST_OK(ret);
+	SILENT_OK(ret);
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_TRUE(cb->counter == 0);
-	TEST_TRUE(cb->op == -1);
+	SILENT_TRUE(cb->counter == 0);
+	SILENT_TRUE(cb->op == -1);
 
 	// Now call it
 	ret = ITestCBack_callSet(oTCB);
@@ -316,9 +322,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
 	// Check it happened as expected
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_call);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_call);
 
 	// Release it
 	cb->counter = 0;
@@ -327,9 +333,9 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
-	TEST_OK(ret);
-	TEST_TRUE(cb->counter == 0);
-	TEST_TRUE(cb->op == -1);
+	SILENT_OK(ret);
+	SILENT_TRUE(cb->counter == 0);
+	SILENT_TRUE(cb->op == -1);
 
 	// Release callback object after set
 	ret = ITestCBack_set(oTCB, oCB);
@@ -346,6 +352,8 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	LOGD_PRINT("%s:%d: ret=0x%x counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
 
+	MSGV("PASSED - Callback tests with Remote and Callback object inputs.\n");
+
 	/* Test use case that returns memory object in callback response and
 	 * also checks for any memory leak caused by this mem object.
 	 */
@@ -361,10 +369,10 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	ret = ITestCBack_callGetMemObject(oTCB, mem_oCB);
 	LOGD_PRINT("%s:%d: ret=%d counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
-	TEST_OK(ret);
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callGetMemObject);
+	SILENT_OK(ret);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callGetMemObject);
 
 	/* After returning from QTEE, the memory object should be released */
 
@@ -379,10 +387,10 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	ret = ITestCBack_callGetMemObjectWithBufferIn(oTCB, bi, sizeof(bi), mem_oCB);
 	LOGD_PRINT("%s:%d: ret=%d counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
-	TEST_OK(ret);
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferIn);
+	SILENT_OK(ret);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferIn);
 
 	/* BO */
 	cb->op = -1;
@@ -393,10 +401,10 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 	ret = ITestCBack_callGetMemObjectWithBufferOut(oTCB, mem_oCB);
 	LOGD_PRINT("%s:%d: ret=%d counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
-	TEST_OK(ret);
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferOut);
+	SILENT_OK(ret);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferOut);
 
 	/* BI and BO */
 	cb->op = -1;
@@ -408,10 +416,10 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 
 	LOGD_PRINT("%s:%d: ret=%d counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
-	TEST_OK(ret);
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferInAndOut);
+	SILENT_OK(ret);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callGetMemObjectWithBufferInAndOut);
 
 	/* Test two memory objects returned in a callback resopnse */
 	cb->op = -1;
@@ -423,10 +431,12 @@ static void test_smcinvoke_cback_basic(Object appObj, Object root, Object client
 
 	LOGD_PRINT("%s:%d: ret=%d counter=%zu op=%d refs=%d\n", __FUNCTION__,
 		   __LINE__, ret, cb->counter, cb->op, cb->refs);
-	TEST_OK(ret);
-	TEST_TRUE(ret == cb->retValue);
-	TEST_TRUE(cb->counter == 1);
-	TEST_TRUE(cb->op == ITestCallable_OP_callGetTwoMemObjects);
+	SILENT_OK(ret);
+	SILENT_TRUE(ret == cb->retValue);
+	SILENT_TRUE(cb->counter == 1);
+	SILENT_TRUE(cb->op == ITestCallable_OP_callGetTwoMemObjects);
+
+	MSGV("PASSED - Callback tests with Memory Object inputs.\n");
 
 	// We are done!
 	Object_ASSIGN_NULL(mem_oCB);
@@ -516,7 +526,6 @@ static int loadApp(Object appLoader, std::string const &path,
 	int ret = 0;
 
 	do {
-		MSGD("Load %s\n", path.c_str());
 		ret = __getFileSize(path);
 		if (ret <= 0) {
 			ret = -1;
@@ -545,7 +554,7 @@ static int loadApp(Object appLoader, std::string const &path,
 			break;
 		}
 
-		TEST_OK(IAppController_getAppObject(*appController, appLegacy));
+		SILENT_OK(IAppController_getAppObject(*appController, appLegacy));
 
 	} while (0);
 
@@ -584,7 +593,7 @@ static int sendCommand(uint32_t cmdId, Object appLegacy, bool b32)
 	case CLIENT_CMD6_RUN_FS_TEST:
 		ret = IAppLegacyTest_handleRequest(appLegacy, req, reqLen, &smplap_rsp, sizeof(smplap_rsp), &rspSizeOut);
 		if (ret) break;
-		TEST_TRUE(rspSizeOut == sizeof(smplap_rsp));
+		SILENT_TRUE(rspSizeOut == sizeof(smplap_rsp));
 		ret = smplap_rsp.status;
 		break;
 	default:
@@ -638,12 +647,12 @@ static int run_internal_app(int argc, char *argv[])
 		   "times\n", cmdId, appName.c_str(), (b32) ? "32bit" : "64bit",
 		   testIterations);
 
-	TEST_OK(MinkCom_getRootEnvObject(&rootEnv));
-	TEST_OK(MinkCom_getClientEnvObject(rootEnv, &clientEnv));
+	SILENT_OK(MinkCom_getRootEnvObject(&rootEnv));
+	SILENT_OK(MinkCom_getClientEnvObject(rootEnv, &clientEnv));
 	SILENT_OK(IClientEnv_open(clientEnv, CAppLoader_UID, &appLoader));
 
 	//load TA
-	TEST_OK(loadApp(appLoader, appName, &appController, &appLegacy));
+	SILENT_OK(loadApp(appLoader, appName, &appController, &appLegacy));
 
 	// run the test
 	for (i = 0; i < testIterations; i++) {
@@ -652,15 +661,15 @@ static int run_internal_app(int argc, char *argv[])
 	}
 
 	if (ret) {
-		LOGE_PRINT("FAILED after %zu iterations\n", i);
+		LOGE_PRINT("TEST FAILED after %zu iterations\n", i);
 	} else {
-		LOGD_PRINT("SUCCEEDED for %zu iterations\n", i);
+		LOGV_PRINT("TEST SUCCEEDED for %zu iterations\n", i);
 	}
 
 	// tear down the environment
 	ret = IAppController_unload(appController);
 	if (ret == 0)
-		printf("Unload Successful\n");
+		LOGD_PRINT("Unload Successful\n");
 
 	Object_ASSIGN_NULL(appLegacy);
 	Object_ASSIGN_NULL(appController);
@@ -689,13 +698,12 @@ static int run_tzecotestapp_test(int argc, char *argv[], int flag)
 	std::string appFullPath = argv[2];
 	size_t iterations = atoi(argv[3]);
 
-	TEST_OK(MinkCom_getRootEnvObject(&rootEnv));
-	TEST_OK(MinkCom_getClientEnvObject(rootEnv, &clientEnv));
+	SILENT_OK(MinkCom_getRootEnvObject(&rootEnv));
+	SILENT_OK(MinkCom_getClientEnvObject(rootEnv, &clientEnv));
 	SILENT_OK(IClientEnv_open(clientEnv, CAppLoader_UID, &appLoader));
 
 	appFullPath.append("/").append("tzecotestapp.mbn");
-	TEST_OK(loadApp(appLoader, appFullPath, &appController, &appObj));
-	LOGD_PRINT("pass\n");
+	SILENT_OK(loadApp(appLoader, appFullPath, &appController, &appObj));
 
 	for (size_t i = 0; i < iterations; i++) {
 		switch (flag) {
@@ -719,7 +727,7 @@ static int run_tzecotestapp_test(int argc, char *argv[], int flag)
 
 	result = IAppController_unload(appController);
 	if (result == 0)
-		printf("Unload Successful\n");
+		LOGD_PRINT("Unload Successful\n");
 
 	// Release the controller, thus also unloading the TA
 	Object_release(appObj);
@@ -729,7 +737,7 @@ static int run_tzecotestapp_test(int argc, char *argv[], int flag)
 	Object_RELEASE_IF(clientEnv);
 	Object_RELEASE_IF(rootEnv);
 
-	LOGD_PRINT("pass\n");
+	MSGV("TEST PASSED!\n");
 
 	return 0;
 }
@@ -760,26 +768,26 @@ static int run_tz_diagnostics_test(int argc, char *argv[])
 	int iterations = atoi(argv[2]);
 	memset((void *)&heapInfo, 0, sizeof(IDiagnostics_HeapInfo));
 
-	TEST_OK(MinkCom_getRootEnvObject(&rootEnv));
-	TEST_OK(MinkCom_getClientEnvObjectWithCreds(rootEnv, credentials, &clientEnv));
-	TEST_OK(IClientEnv_open(clientEnv, CDiagnostics_UID, &appObject));
+	SILENT_OK(MinkCom_getRootEnvObject(&rootEnv));
+	SILENT_OK(MinkCom_getClientEnvObjectWithCreds(rootEnv, credentials, &clientEnv));
+	SILENT_OK(IClientEnv_open(clientEnv, CDiagnostics_UID, &appObject));
 
 	for (int i = 0; i < iterations; i++) {
-		LOGE_PRINT("Retrieve TZ heap info Iteration %d\n", i);
-		TEST_OK(IDiagnostics_queryHeapInfo(appObject, &heapInfo));
+		MSGV("Retrieve TZ heap info Iteration %d\n", i);
+		SILENT_OK(IDiagnostics_queryHeapInfo(appObject, &heapInfo));
 
-		LOGD_PRINT("%d = Total bytes as heap\n", heapInfo.totalSize);
-		LOGD_PRINT("%d = Total bytes allocated from heap\n",
+		MSGV("%d = Total bytes as heap\n", heapInfo.totalSize);
+		MSGV("%d = Total bytes allocated from heap\n",
 			   heapInfo.usedSize);
-		LOGD_PRINT("%d = Total bytes free on heap\n",
+		MSGV("%d = Total bytes free on heap\n",
 			   heapInfo.freeSize);
-		LOGD_PRINT("%d = Total bytes overhead\n",
+		MSGV("%d = Total bytes overhead\n",
 			   heapInfo.overheadSize);
-		LOGD_PRINT("%d = Total bytes wasted\n", heapInfo.wastedSize);
-		LOGD_PRINT("%d = Largest free block size\n\n",
+		MSGV("%d = Total bytes wasted\n", heapInfo.wastedSize);
+		MSGV("%d = Largest free block size\n\n",
 			   heapInfo.largestFreeBlockSize);
 
-		LOGE_PRINT("Done!\n\n");
+		MSGV("TEST PASSED!\n\n");
 	}
 
 	Object_ASSIGN_NULL(appObject);
@@ -818,7 +826,6 @@ static unsigned int parse_command(int argc, char *const argv[])
 
 	while ((command = getopt_long(argc, argv, "icmdh", testopts, NULL)) !=
 		-1) {
-		printf("command is: %d\n", command);
 		switch (command) {
 		case 'i':
 			ret = 1 << INTERNAL;

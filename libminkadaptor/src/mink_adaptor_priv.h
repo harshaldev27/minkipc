@@ -7,6 +7,17 @@
 #include <qcomtee_object_types.h>
 #include "object.h"
 
+/* Suppress verbose and debug logs by default */
+#ifdef MSGV
+#undef MSGV
+#define MSGV(...)
+#endif
+
+#ifdef MSGD
+#undef MSGD
+#define MSGD(...)
+#endif
+
 #define container_of(ptr, type, member) \
 	((type *)((void *)(ptr) - __builtin_offsetof(type, member)))
 

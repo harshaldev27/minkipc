@@ -457,7 +457,7 @@ static int invoke_over_tee(ObjectCxt cxt, ObjectOp op, ObjectArg *args,
 	}
 
 	if (result) {
-		MSGE("Failed qcomtee_object_invoke. result = 0x%x\n", result);
+		MSGD("Failed qcomtee_object_invoke. result = 0x%x\n", result);
 		ret = result;
 		goto err_result;
 	}
