@@ -13,9 +13,14 @@
 #else
 #include <stdio.h>
 #define MSGV printf
-#define MSGD printf
+#define MSGD(...)
 #define MSGE printf
 #endif
+
+#define LOGV_PRINT(fmt, ...)                                            \
+  do {                                                                  \
+    MSGV("[%s:%u] " fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+  } while(0)
 
 #define LOGD_PRINT(fmt, ...)                                            \
   do {                                                                  \

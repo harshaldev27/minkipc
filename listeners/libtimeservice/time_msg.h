@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 #define MSGV printf
-#define MSGD printf
 #define MSGE printf
+#define MSGD(...)
 
 /* Fixed. Don't increase the size of TZ_CM_MAX_NAME_LEN */
 #define TZ_CM_MAX_NAME_LEN          256

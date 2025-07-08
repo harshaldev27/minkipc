@@ -14,6 +14,11 @@ endif()
 
 include_directories(${QCBOR_INCLUDE_DIRS})
 
+find_package(Threads REQUIRED)
+if(NOT THREADS_FOUND)
+        message(FATAL_ERROR "Threads not found")
+endif()
+
 # ''Build IDL Headers''.
 
 set (IDLS

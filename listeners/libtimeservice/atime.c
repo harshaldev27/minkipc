@@ -183,14 +183,16 @@ static int time_getsystime(void *req, void *rsp)
 
 	my_rsp->ret = get_systime(&time);
 	memcpy(&(my_rsp->time), &time, sizeof(tz_time_t));
-	MSGD("time_getsystime tm_sec %d\n", my_rsp->time.tm_sec);
-	MSGD("time_getsystime tm_min %d\n", my_rsp->time.tm_min);
-	MSGD("time_getsystime tm_mday %d\n", my_rsp->time.tm_mday);
-	MSGD("time_getsystime tm_mon %d\n", my_rsp->time.tm_mon);
-	MSGD("time_getsystime tm_year %d\n", my_rsp->time.tm_year);
+
+	MSGV("System Time: %04d-%02d-%02d %02d:%02d:%02d\n",
+	     my_rsp->time.tm_year + 1900, my_rsp->time.tm_mon + 1,
+	     my_rsp->time.tm_mday, my_rsp->time.tm_hour, my_rsp->time.tm_min,
+	     my_rsp->time.tm_sec);
+
 	MSGD("time_getsystime tm_wday %d\n", my_rsp->time.tm_wday);
 	MSGD("time_getsystime tm_yday %d\n", my_rsp->time.tm_yday);
 	MSGD("time_getsystime tm_isdst %d\n", my_rsp->time.tm_isdst);
+
 	MSGD("time_getsystime returns %d\n", my_rsp->ret);
 
 	return 0;
