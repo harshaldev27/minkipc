@@ -11,6 +11,9 @@
 #define MSGE printf
 #define MSGD(...)
 
+#define TIME_SERVICE_BUF_LEN    (20*1024)
+#define TIME_SERVICE_ID          0xb
+
 /* Fixed. Don't increase the size of TZ_CM_MAX_NAME_LEN */
 #define TZ_CM_MAX_NAME_LEN          256
 #define TZ_CM_MAX_DATA_LEN          20000

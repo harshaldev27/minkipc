@@ -15,10 +15,13 @@
 extern "C" {
 #endif
 
+int taautoload_init(void);
+void taautoload_deinit(void);
+
 Object requestTABuffer;
 Object registerTABuffer;
 
-int register_service() {
+int taautoload_init(void) {
 
   int ret = 0;
   int32_t rv = Object_ERROR;
@@ -84,7 +87,7 @@ err_ta_buf_open:
   return ret;
 }
 
-void deregister_service() {
+void taautoload_deinit(void) {
 
   /* Required to release memory on QTEE side */
   if(!Object_isNull(registerTABuffer))

@@ -8,6 +8,9 @@
 
 #include "cmn.h"
 
+#define GPFILE_SERVICE_BUF_LEN  (504*1024)
+#define GPFILE_SERVICE_ID        0x7000
+
 /**
  * @enum tz_gpfs_msg_cmd_type
  * @brief GP File system service commands used by QTEE to request services from the REE.

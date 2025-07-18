@@ -6,7 +6,21 @@
 #include <time.h>
 #include "time_msg.h"
 
+#include "CListenerCBO.h"
+#include "CRegisterListenerCBO.h"
+#include "IRegisterListenerCBO.h"
+#include "IClientEnv.h"
+#include "MinkCom.h"
+
+/* Exported init functions */
+int time_init(void);
+void time_deinit(void);
+
 int smci_dispatch(void *buf, size_t buf_len);
+
+static Object register_obj = Object_NULL;
+static Object mo = Object_NULL;
+static Object cbo = Object_NULL;
 
 /**
  * @brief Returns seconds in UTC as a tz_time_spec.
@@ -252,6 +266,108 @@ static int time_error(void *rsp)
 	(*my_rsp).ret = -1;
 
 	return 0;
+}
+
+int time_init(void)
+{
+	int ret = 0;
+	int32_t rv = Object_OK;
+
+	Object root = Object_NULL;
+	Object client_env = Object_NULL;
+	void *buf = NULL;
+	size_t buf_len = 0;
+
+	/* There are 4 threads for each callback. */
+	rv = MinkCom_getRootEnvObject(&root);
+	if (Object_isERROR(rv)) {
+		MSGE("getRootEnvObject failed: 0x%x\n", rv);
+		ret = -1;
+		goto exit_release;
+	}
+
+	rv = MinkCom_getClientEnvObject(root, &client_env);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(root);
+		MSGE("getClientEnvObject failed: 0x%x\n", rv);
+		ret = -1;
+		goto exit_release;
+	}
+
+	rv = IClientEnv_open(client_env, CRegisterListenerCBO_UID,
+			     &register_obj);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(client_env);
+		Object_ASSIGN_NULL(root);
+		MSGE("IClientEnv_open failed: 0x%x\n", rv);
+		ret = -1;
+		goto exit_release;
+	}
+
+	rv = MinkCom_getMemoryObject(root, TIME_SERVICE_BUF_LEN, &mo);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(client_env);
+		Object_ASSIGN_NULL(root);
+		ret = -1;
+		MSGE("getMemoryObject failed: 0x%x", rv);
+		goto exit_release_obj;
+	}
+
+	rv = MinkCom_getMemoryObjectInfo(mo, &buf, &buf_len);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(mo);
+		Object_ASSIGN_NULL(client_env);
+		Object_ASSIGN_NULL(root);
+		ret = -1;
+		MSGE("getMemoryObjectInfo failed: 0x%x\n", rv);
+		goto exit_release_obj;
+	}
+
+	/* Create CBO listener and register it */
+	rv = CListenerCBO_new(&cbo, TIME_SERVICE_ID, smci_dispatch, buf, buf_len);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(mo);
+		Object_ASSIGN_NULL(client_env);
+		Object_ASSIGN_NULL(root);
+		ret = -1;
+		MSGE("CListenerCBO_new failed: 0x%x\n", rv);
+		goto exit_release_obj;
+	}
+
+	rv = IRegisterListenerCBO_register(register_obj,
+					   TIME_SERVICE_ID,
+					   cbo,
+					   mo);
+	if (Object_isERROR(rv)) {
+		Object_ASSIGN_NULL(mo);
+		Object_ASSIGN_NULL(client_env);
+		Object_ASSIGN_NULL(root);
+		ret = -1;
+		MSGE("IRegisterListenerCBO_register(%d) failed: 0x%x",
+		     TIME_SERVICE_ID, rv);
+		goto exit_release_cbo;
+	}
+
+	Object_ASSIGN_NULL(client_env);
+	Object_ASSIGN_NULL(root);
+
+	return ret;
+
+exit_release_cbo:
+	Object_ASSIGN_NULL(cbo);
+
+exit_release_obj:
+	Object_ASSIGN_NULL(register_obj);
+
+exit_release:
+	return ret;
+}
+
+void time_deinit(void)
+{
+	Object_ASSIGN_NULL(register_obj);
+	Object_ASSIGN_NULL(cbo);
+	Object_ASSIGN_NULL(mo);
 }
 
 int smci_dispatch(void *buf, size_t buf_len)

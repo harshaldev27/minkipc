@@ -3,14 +3,22 @@ project(libgpfsservice
 	LANGUAGES C
 )
 
+# ''Packages''.
+
+find_package(Threads REQUIRED)
+if(NOT THREADS_FOUND)
+        message(FATAL_ERROR "Threads not found")
+endif()
+
 add_compile_options(
 	-Wstrict-prototypes -Wmissing-prototypes -Wbad-function-cast
-	-Wswitch-default
 )
 
 # ''Source files''.
 
 set(GPFS_SRC
+	../../listenercbo/src/CListenerCBO.c
+	../../listenercbo/src/memscpy.h
 	../cmn/helper.c
 	gpfs_msg.h
 	gpfs_main.c
@@ -22,8 +30,17 @@ add_library(gpfsservice SHARED ${GPFS_SRC})
 
 # ''Headers and dependencies''.
 
+# The binary depends on the MINK-IDLs
+add_dependencies(gpfsservice libcbolistener_MINKHEADERS)
+
 target_include_directories(gpfsservice
 	PRIVATE ../cmn
+	PRIVATE ../../listenercbo/include
+	PRIVATE ../../listenercbo/idl
+)
+
+target_link_libraries(gpfsservice
+	PRIVATE minkadaptor
 )
 
 # ''Library version''.

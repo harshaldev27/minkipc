@@ -39,6 +39,8 @@ if (BUILD_MINKTEEC)
 endif()
 
 add_subdirectory(qtee_supplicant)
+add_subdirectory(listeners/listenercbo)
+
 if(BUILD_TIME_LISTENER)
 	add_subdirectory(listeners/libtimeservice)
 endif()
