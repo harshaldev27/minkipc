@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "listener_mngr.h"
 #include "object.h"
 #include "qlist.h"
 
@@ -39,7 +38,8 @@ typedef struct {
 typedef struct {
 	atomic_int refs; /**< Reference count of the object. */
 	int listener_id; /**< The id of the listener represented by this object. */
-	Object smo; /**< The memory object shared between listener and QTEE.  */
+	void *buf; /**< The memory shared between listener and QTEE. */
+	size_t buf_len; /**< Length of the buffer shared with QTEE */
 	dispatch_entry dispatch_func; /**< Dispatch function for the listener. */
 	pthread_mutex_t wait_mutex; /**< QTEE waits on this mutex for the listener. */
 	QList list_wait_cond; /**< Queue of QTEE services/TAs waiting on listener. */
@@ -52,6 +52,7 @@ typedef struct {
  * Creates a new listener callback object which can be registered with QTEE by
  * the QTEE supplicant.
  */
-int32_t CListenerCBO_new(Object *objOut, Object smo, struct listener_svc *listener);
+int32_t CListenerCBO_new(Object *obj_out, int listener_id, dispatch_entry dispatch_func,
+			 void *buf, size_t buf_len);
 
 #endif // __CLISTENERCBO_H

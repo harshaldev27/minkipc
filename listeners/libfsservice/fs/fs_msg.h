@@ -8,6 +8,9 @@
 
 #include "cmn.h"
 
+#define FILE_SERVICE_BUF_LEN    (20*1024)
+#define FILE_SERVICE_ID          0xa
+
 /**
  * @struct tz_stat
  * @brief Status structure for returning file status to QTEE

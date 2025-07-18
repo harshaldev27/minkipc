@@ -8,12 +8,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "listener_mngr.h"
 #include "memscpy.h"
-#include "MinkCom.h"
 
 #include "CListenerCBO.h"
 #include "IListenerCBO_invoke.h"
+
+#define MSGV printf
+#define MSGD printf
+#define MSGE printf
 
 static inline void QList_free(QList *list)
 {
@@ -73,7 +75,6 @@ static int32_t CListenerCBO_retain(ListenerCBO* me)
 static int32_t CListenerCBO_release(ListenerCBO* me)
 {
 	if (atomic_fetch_sub(&me->refs, 1) == 1) {
-		Object_ASSIGN_NULL(me->smo);
 		pthread_mutex_destroy(&me->wait_mutex);
 		QList_free(&me->list_wait_cond);
 		free(me);
@@ -112,8 +113,8 @@ static int32_t CListenerCBO_request(ListenerCBO* me,
 
 	int ret = 0;
 	int32_t rv = Object_OK;
-	void *buf = NULL;
-	size_t buf_len = 0;
+	void *buf = me->buf;
+	size_t buf_len = me->buf_len;
 	char *tmp_buf = NULL;
 
 	int expected = FREE; /* Expected state of listener */
@@ -124,12 +125,6 @@ static int32_t CListenerCBO_request(ListenerCBO* me,
 	atomic_compare_exchange_strong(&me->listener_busy, &expected, BUSY);
 	if (expected == BUSY)
 		return Object_ERROR_BUSY;
-
-	rv = MinkCom_getMemoryObjectInfo(me->smo, &buf, &buf_len);
-	if (Object_isERROR(rv)) {
-		MSGE("getMemoryObjectInfo failed: 0x%x\n", rv);
-		goto exit;
-	}
 
 	tmp_buf = (char *)calloc(1, buf_len);
 	if (!tmp_buf) {
@@ -246,38 +241,20 @@ static int32_t CListenerCBO_wait(ListenerCBO *me)
 static IListenerCBO_DEFINE_INVOKE(CListenerCBO_invoke, CListenerCBO_,
 				  ListenerCBO*)
 
-int32_t CListenerCBO_new(Object *obj_out, Object smo,
-			 struct listener_svc *listener)
+int32_t CListenerCBO_new(Object *obj_out, int listener_id, dispatch_entry dispatch_func,
+			 void *buf, size_t buf_len)
 {
-	int ret = 0;
-	dispatch_entry disp_entry;
 	ListenerCBO *me = NULL;
 
 	me = (ListenerCBO *)malloc(sizeof(ListenerCBO));
 	if (!me)
 		return Object_ERROR_KMEM;
 
-	listener->lib_handle = dlopen(listener->file_name, RTLD_NOW);
-	if (listener->lib_handle == NULL) {
-		MSGE("dlopen(%s, RLTD_NOW) failed: %s\n",
-		     listener->file_name, dlerror());
-		ret = Object_ERROR;
-		goto err;
-	}
-
-	disp_entry = (dispatch_entry)dlsym(listener->lib_handle,
-					   listener->dispatch_func);
-	if (disp_entry == NULL) {
-		MSGE("dlsym(%s) not found in lib %s, dlerror msg: %s\n",
-		      listener->dispatch_func, listener->file_name, dlerror());
-		ret = Object_ERROR;
-		goto err;
-	}
-
 	atomic_init(&me->refs, 1);
-	me->dispatch_func = disp_entry;
-	me->listener_id = listener->id;
-	Object_INIT(me->smo, smo);
+	me->buf = buf;
+	me->buf_len = buf_len;
+	me->dispatch_func = dispatch_func;
+	me->listener_id = listener_id;
 
 	QList_construct(&me->list_wait_cond);
 	atomic_init(&me->listener_busy, FREE);
@@ -285,10 +262,4 @@ int32_t CListenerCBO_new(Object *obj_out, Object smo,
 
 	*obj_out = (Object){ CListenerCBO_invoke, me };
 	return Object_OK;
-
-err:
-	MSGE("Ctor of CListenerCBO failed and is bailing due to error\n");
-	free(me);
-
-	return ret;
 }

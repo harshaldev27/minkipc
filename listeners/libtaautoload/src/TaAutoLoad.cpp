@@ -15,10 +15,13 @@
 extern "C" {
 #endif
 
-Object requestTABuffer;
-Object registerTABuffer;
+int init(void);
+void deinit(void);
 
-int register_service() {
+static Object requestTABuffer = Object_NULL;
+static Object registerTABuffer = Object_NULL;
+
+int init(void) {
 
   int ret = 0;
   int32_t rv = Object_ERROR;
@@ -27,6 +30,7 @@ int register_service() {
 
   rv = MinkCom_getRootEnvObject(&rootObj);
   if (Object_isERROR(rv)) {
+    rootObj = Object_NULL;
     MSGE("getRootEnvObject failed: 0x%x\n", rv);
     return -1;
   }
@@ -35,24 +39,27 @@ int register_service() {
   MSGD("Opening CRequestTABuffer_open\n");
   rv = CRequestTABuffer_open(&requestTABuffer, rootObj);
   if (Object_isERROR(rv)) {
+    requestTABuffer = Object_NULL;
     ret = -1;
     MSGE("Opening CRequestTABuffer failed: 0x%x\n", rv);
-    goto err_ta_buf_open;
+    goto err;
   }
 
   rv = MinkCom_getClientEnvObject(rootObj, &clientEnvObj);
   if (Object_isERROR(rv)) {
+    clientEnvObj = Object_NULL;
     ret = -1;
     MSGE("getClientEnvObject failed: 0x%x\n", rv);
-    goto err_get_client_env;
+    goto err;
   }
 
   MSGD("%s ::Opening CRegisterTABufCBO_UID\n", __FUNCTION__);
   rv = IClientEnv_open(clientEnvObj, CRegisterTABufCBO_UID, &registerTABuffer);
   if (Object_isERROR(rv)) {
+    registerTABuffer = Object_NULL;
     ret = -1;
     MSGE("Opening CRegisterTABufferCBO_UID failed: 0x%x\n", rv);
-    goto err_client_env_open;
+    goto err;
   }
 
   /* Register RequestTABuffer Object with QTEE Service */
@@ -61,7 +68,7 @@ int register_service() {
   if (Object_isERROR(rv)) {
     ret = -1;
     MSGE("Calling TABufCBO Register failed: 0x%x\n", rv);
-    goto err_reg_ta_buf;
+    goto err;
   }
 
   Object_ASSIGN_NULL(rootObj);
@@ -69,22 +76,16 @@ int register_service() {
 
   return ret;
 
-err_reg_ta_buf:
+err:
   Object_ASSIGN_NULL(registerTABuffer);
-
-err_client_env_open:
   Object_ASSIGN_NULL(clientEnvObj);
-  
-err_get_client_env:
   Object_ASSIGN_NULL(requestTABuffer);
-
-err_ta_buf_open:
   Object_ASSIGN_NULL(rootObj);
 
   return ret;
 }
 
-void deregister_service() {
+void deinit(void) {
 
   /* Required to release memory on QTEE side */
   if(!Object_isNull(registerTABuffer))
