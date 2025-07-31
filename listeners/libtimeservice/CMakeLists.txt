@@ -3,14 +3,32 @@ project(libtimeservice
 	LANGUAGES C
 )
 
+# ''Packages''.
+
+# Append modules directory.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+set(QCBOR_DIR_HINT "" CACHE PATH "Hint path for QCBOR directory")
+
+find_package(QCBOR REQUIRED)
+if(NOT QCBOR_FOUND)
+	message(FATAL_ERROR "QCBOR not found")
+endif()
+
+find_package(Threads REQUIRED)
+if(NOT THREADS_FOUND)
+        message(FATAL_ERROR "Threads not found")
+endif()
+
 add_compile_options(
 	-Wstrict-prototypes -Wmissing-prototypes -Wbad-function-cast
-	-Wswitch-default
 )
 
 # ''Source files''.
 
 set(SRC
+	../listenercbo/src/CListenerCBO.c
+	../listenercbo/src/memscpy.h
 	atime.c
 	time_msg.h
 )
@@ -22,6 +40,21 @@ add_library(timeservice SHARED ${SRC})
 set_target_properties(timeservice PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
+)
+
+# ''Headers and dependencies''.
+
+# The binary depends on the MINK-IDLs
+add_dependencies(timeservice listenercbo_MINKHEADERS)
+
+target_include_directories(timeservice
+	PRIVATE ../listenercbo/include
+	PRIVATE ../listenercbo/idl
+)
+
+target_link_libraries(timeservice
+	PRIVATE minkadaptor
+	PRIVATE ${QCBOR_LIBRARIES}
 )
 
 # ''Install targets''.
