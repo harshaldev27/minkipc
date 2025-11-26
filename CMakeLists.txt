@@ -15,7 +15,11 @@ option(BUILD_FS_LISTENER "Build File system Listener" TRUE)
 # Build Secure File system listener
 option(BUILD_GPFS_LISTENER "Build GP File system Listener" TRUE)
 # Use GLib for strlcat/strlcpy fallback
-option(USE_GLIB "Use GLIB functions" TRUE)
+option(USE_GLIB "Use GLIB functions" FALSE)
+# Use pkg-config for discovering install target directory
+option(CFG_USE_PKGCONFIG "Use pkg-config for discovering install target directory for systemd and udev files." OFF)
+# Enable systemd to get variable from environment
+option(CFG_ENABLE_SYSTEMD "Enable systemd service unit file generation." OFF)
 
 include(GNUInstallDirs)
 
