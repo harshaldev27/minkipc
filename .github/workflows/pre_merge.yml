@@ -3,7 +3,6 @@ name: pre_merge
 on:
   pull_request_target:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   load_parameters:
