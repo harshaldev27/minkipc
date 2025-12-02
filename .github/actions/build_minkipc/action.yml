@@ -1,0 +1,65 @@
+name: Build workspace
+description: Build workspace
+
+inputs:
+  docker_image:
+    description: Docker image
+    required: true
+    default: ssg-image:v1.0
+  event_name:
+    description: Event type that triggered the workflow (e.g., pull_request_target, push, workflow_call)
+    required: true
+  pr_ref:
+    description: PR branch ref (e.g., feature/my-feature)
+    required: false
+  pr_repo:
+    description: PR repo full name (e.g., org/repo or user/repo)
+    required: false
+  base_ref:
+    description: Base branch ref (e.g., master)
+    required: false
+
+outputs:
+  qcbor_install:
+    description: "MINKIPC install directory"
+    value: ${{ steps.save_minkipc.outputs.minkipc_install }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Sync Codebase
+      uses: qualcomm/minkipc/.github/actions/sync@main
+      with:
+        event_name: ${{ inputs.event_name }}
+        pr_ref: ${{ inputs.pr_ref }}
+        pr_repo: ${{ inputs.pr_repo }}
+        base_ref: ${{ inputs.base_ref }}
+
+    - name: Compile
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Run build in Docker
+        docker run -i --rm \
+          --user "$(id -u):$(id -g)" \
+          --workdir "${{ github.workspace }}" \
+          -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
+          -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+          "${{ inputs.docker_image }}" bash -c '
+            set -euo pipefail
+            cmake -S . -B build \
+              -DBUILD_UNITTEST=ON \
+              -DCMAKE_TOOLCHAIN_FILE=CMakeToolchain.txt \
+              -DQCBOR_DIR_HINT=${GITHUB_WORKSPACE}/../LIBQCBOR/usr/local -DQCOMTEE_DIR_HINT=${GITHUB_WORKSPACE}/../QUIC_TEEC/usr/local/ 2>&1 | tee build.log
+            cd build
+            make install DESTDIR="${GITHUB_WORKSPACE}/../LIBQCBOR"
+            test ${PIPESTATUS[0]} -eq 0
+          '
+ 
+
+
+
+
+
+

@@ -1,0 +1,50 @@
+name: Build workspace
+description: Build workspace
+
+inputs:
+  docker_image:
+    description: Docker image
+    required: true
+    default: ssg-image:v1.0
+  event_name:
+    description: Event type that triggered the workflow (e.g., pull_request_target, push, workflow_call)
+    required: true
+
+outputs:
+  qcbor_install:
+    description: "QCBOR install directory"
+    value: ${{ steps.save_qcbor.outputs.qcbor_install }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Sync Codebase
+      uses: qualcomm/minkipc/.github/actions/sync@main
+      with:
+        event_name: ${{ inputs.event_name }}
+        pr_ref: master
+        pr_repo: laurencelundblade/QCBOR
+        base_ref: master
+
+    - name: Compile
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Create toolchain file
+        echo -e "set(CMAKE_SYSTEM_NAME Linux)\nset(CMAKE_SYSTEM_PROCESSOR aarch64)\nset(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)\nset(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)" > CMakeToolchain.txt
+        cat CMakeToolchain.txt
+
+        # Run build in Docker
+        docker run -i --rm \
+          --user "$(id -u):$(id -g)" \
+          --workdir "${{ github.workspace }}" \
+          -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
+          -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+          "${{ inputs.docker_image }}" bash -c '
+            set -euo pipefail
+            cmake  -DBUILD_UNITTEST=ON -DCMAKE_TOOLCHAIN_FILE=CMakeToolchain.txt 
+            cmake --build . 2>&1 | tee build.log
+            make install DESTDIR="${GITHUB_WORKSPACE}/../LIBQCBOR"
+            test ${PIPESTATUS[0]} -eq 0
+            cat build.log
+            '  

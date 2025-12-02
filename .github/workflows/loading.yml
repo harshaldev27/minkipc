@@ -1,0 +1,54 @@
+---
+name: _loading
+description: Load required parameters for the subsequent jobs
+
+on:
+  workflow_call:
+    inputs:
+      event_name:
+        required: false
+        type: string
+        description: Optional event name to use for building
+        default: ${{ github.event_name }}
+
+      pr_ref:
+        required: false
+        type: string
+        description: Optional pull request reference to use for building
+        default: ${{ github.event.pull_request.head.ref }}
+
+      pr_repo:
+        required: false
+        type: string
+        description: Optional pull request repository to use for building
+        default: ${{ github.event.pull_request.head.repo.full_name }}
+
+      base_ref:
+        required: false
+        type: string
+        description: Optional base reference to use for building
+        default: ${{ github.ref_name }}
+
+    outputs:
+      build_matrix:
+        description: The build arguments
+        value: ${{ jobs.loading.outputs.build_matrix }}
+
+jobs:
+  loading:
+    runs-on: ubuntu-latest
+    outputs:
+      build_matrix: ${{ steps.loading.outputs.build_matrix }}
+    steps:
+      - name: Sync Codebase
+        id: sync
+        uses: qualcomm/minkipc/.github/actions/sync@main
+        with:
+          event_name: ${{ inputs.event_name }}
+          pr_ref: ${{ inputs.pr_ref }}
+          pr_repo: ${{ inputs.pr_repo }}
+          base_ref: ${{ inputs.base_ref }}
+
+      - name: Load Parameters
+        id: loading
+        uses: qualcomm/minkipc/.github/actions/loading@main
