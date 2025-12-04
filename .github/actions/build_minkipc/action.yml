@@ -56,10 +56,3 @@ runs:
             make install DESTDIR="${GITHUB_WORKSPACE}/../LIBQCBOR"
             test ${PIPESTATUS[0]} -eq 0
           '
- 
-
-
-
-
-
-
