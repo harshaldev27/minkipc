@@ -1,0 +1,87 @@
+name: _sync_and_build
+on:
+  workflow_call:
+    inputs:
+      docker_image:
+        description: "Docker image to use"
+        type: string
+        required: true
+
+      build_matrix:
+        description: build matrix containing repos
+        type: string
+        required: true
+
+      event_name:
+        required: false
+        type: string
+        description: Optional event name to use for building
+        default: ${{ github.event_name }}
+
+      pr_ref:
+        required: false
+        type: string
+        description: Optional pull request reference to use for building
+        default: ${{ github.event.pull_request.head.ref }}
+
+      pr_repo:
+        required: false
+        type: string
+        description: Optional pull request repository to use for building
+        default: ${{ github.event.pull_request.head.repo.full_name }}
+
+      base_ref:
+        required: false
+        type: string
+        description: Optional base reference to use for building
+        default: ${{ github.ref_name }}
+
+    outputs:
+      workspace_path:
+        description: "Path of synced workspace"
+        value: ${{ jobs.build.outputs.workspace_path }}
+
+jobs:
+  build:
+    # If you need the runner group syntax, you can use the block form:
+    runs-on:
+      group: GHA-Gen-Qlnx-Stg-SelfHosted-RG
+      labels: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
+    # Or this alternative line if you don't need group:
+    # runs-on: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
+    outputs:
+      workspace_path: ${{ steps.sync.outputs.workspace_path }}
+    steps:
+      - name: Checkout infra repo (this repo)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Pull docker image
+        uses: qualcomm/minkipc/.github/actions/pull_docker_image@main
+        with:
+          image: ${{ inputs.docker_image }}
+
+      - name: Build QCBOR
+        id: build_qcbor
+        uses: qualcomm/minkipc/.github/actions/build_qcbor@main
+        with:
+          docker_image: ${{ inputs.docker_image }}
+          event_name: ${{ inputs.event_name }}
+          
+      - name: Build QTEEC
+        id: build_qtee
+        uses: qualcomm/minkipc/.github/actions/build_quic-teec@main
+        with:
+          docker_image: ${{ inputs.docker_image }}
+          event_name: ${{ inputs.event_name }}
+          
+      - name: Build MINKIPC
+        id: build_minkipc
+        uses: qualcomm/minkipc/.github/actions/build_minkipc@main
+        with:
+          docker_image: ${{ inputs.docker_image }}
+          event_name: ${{ inputs.event_name }}
+          pr_ref: ${{ inputs.pr_ref }}
+          pr_repo: ${{ inputs.pr_repo }}
+          base_ref: ${{ inputs.base_ref }}

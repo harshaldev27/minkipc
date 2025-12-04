@@ -1,0 +1,25 @@
+name: pre_merge
+
+on:
+  pull_request_target:
+    branches: [ main ]
+
+jobs:
+  load_parameters:
+    uses: qualcomm/minkipc/.github/workflows/loading.yml@main
+    secrets: inherit
+    with:
+      event_name: ${{ github.event_name }}
+      pr_ref: ${{ github.event.pull_request.head.ref }}
+      pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
+
+  build:
+    needs: load_parameters
+    uses: qualcomm/minkipc/.github/workflows/sync_build.yml@main
+    secrets: inherit
+    with:
+      docker_image: ssg-image:v1.0
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
+      event_name: ${{ github.event_name }}
+      pr_ref: ${{ github.event.pull_request.head.ref }}
+      pr_repo: ${{ github.event.pull_request.head.repo.full_name }}

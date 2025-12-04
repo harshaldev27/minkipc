@@ -1,0 +1,51 @@
+name: Build workspace
+description: Build workspace
+
+inputs:
+  docker_image:
+    description: Docker image
+    required: true
+    default: ssg-image:v1.0
+  event_name:
+    description: Event type that triggered the workflow (e.g., pull_request_target, push, workflow_call)
+    required: true
+
+outputs:
+  qcbor_install:
+    description: "quic-teec install directory"
+    value: ${{ steps.save_quic-teec.outputs.quic-teec_install }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Sync Codebase
+      uses: qualcomm/minkipc/.github/actions/sync@main
+      with:
+        event_name: ${{ inputs.event_name }}
+        pr_ref: main
+        pr_repo: quic/quic-teec
+        base_ref: main
+
+    - name: Compile
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Run build in Docker
+        docker run -i --rm \
+          --user "$(id -u):$(id -g)" \
+          --workdir "${{ github.workspace }}" \
+          -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
+          -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            "${{ inputs.docker_image }}" bash -c '
+            set -euo pipefail
+            cmake -S . -B build \
+              -DCMAKE_TOOLCHAIN_FILE=CMakeToolchain.txt \
+              -DBUILD_UNITTEST=ON \
+              -DQCBOR_DIR_HINT=${GITHUB_WORKSPACE}/../LIBQCBOR/usr/local
+            cmake --build build 2>&1 | tee build.log
+            cd build
+            make install DESTDIR="${GITHUB_WORKSPACE}/../QUIC_TEEC"
+            test ${PIPESTATUS[0]} -eq 0
+            '  
+
