@@ -18,12 +18,12 @@ option(BUILD_GPFS_LISTENER "Build GP File system Listener" TRUE)
 option(USE_GLIB "Use GLIB functions" FALSE)
 # Use pkg-config for discovering install target directory
 option(CFG_USE_PKGCONFIG "Use pkg-config for discovering install target directory for systemd and udev files." OFF)
-# Enable systemd to get variable from environment
-option(CFG_ENABLE_SYSTEMD "Enable systemd service unit file generation." OFF)
 
 include(GNUInstallDirs)
 
 set(MINKIDLC_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/idlc" CACHE PATH "Directory containing the idlc executable")
+set(SYSTEMD_UNIT_DIR "" CACHE PATH "Directory containing the systemd unit path")
+set(UDEV_DIR "" CACHE PATH "Directory containing the UDEV path")
 
 if ("${MINKIDLC_BIN_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/idlc")
 	file(DOWNLOAD
