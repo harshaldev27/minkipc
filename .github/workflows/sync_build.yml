@@ -98,21 +98,21 @@ jobs:
 
       - name: Upload artifacts
         id: upload-artifacts
-        uses: qualcomm-linux-stg/minkipc/.github/actions/aws_s3_helper@main
+        uses: qualcomm/minkipc/.github/actions/aws_s3_helper@main
         with:
-          s3_bucket: qli-stg-gen-qlnx-gh-artifacts
+          s3_bucket: qli-prd-gen-qlnx-gh-artifacts
           local_file: ${{ github.workspace }}/../artifacts/file_list.txt
           mode: multi-upload
 
       - name: Clean up
         run: |
-          rm -rf artifacts
+          rm -rf ${{ github.workspace }}/../artifacts
 
       - name: Update summary
         if: success() || failure()
         shell: bash
         run: |
-          if [ ${{ steps.build_workspace.outcome }} == 'success' ]; then
+          if [ ${{ steps.build_minkipc }} == 'success' ]; then
             echo "Build was successful"
             summary=":heavy_check_mark: Build Success"
           else
