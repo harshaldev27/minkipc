@@ -45,8 +45,8 @@ jobs:
   build:
     # If you need the runner group syntax, you can use the block form:
     runs-on:
-      group: GHA-Gen-Qlnx-Stg-SelfHosted-RG
-      labels: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
+      group: GHA-SSG-Prd-SelfHosted-RG
+      labels: [self-hosted,ssg-prd-u2204-x64-large-od-ephem]
     # Or this alternative line if you don't need group:
     # runs-on: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
     outputs:
@@ -100,7 +100,7 @@ jobs:
         id: upload-artifacts
         uses: qualcomm/minkipc/.github/actions/aws_s3_helper@main
         with:
-          s3_bucket: qli-prd-gen-qlnx-gh-artifacts
+          s3_bucket:  qli-prd-ssg-gh-artifacts
           local_file: ${{ github.workspace }}/../artifacts/file_list.txt
           mode: multi-upload
 
