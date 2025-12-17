@@ -20,7 +20,7 @@ inputs:
     required: false
 
 outputs:
-  qcbor_install:
+  minkipc_install:
     description: "MINKIPC install directory"
     value: ${{ steps.save_minkipc.outputs.minkipc_install }}
 

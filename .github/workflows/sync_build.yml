@@ -37,18 +37,17 @@ on:
         default: ${{ github.ref_name }}
 
     outputs:
-      workspace_path:
-        description: "Path of synced workspace"
-        value: ${{ jobs.build.outputs.workspace_path }}
+      s3_location:
+        description: "S3 location of uploaded artifacts"
+        value: ${{ jobs.build.outputs.s3_location }}
 
 jobs:
   build:
     # If you need the runner group syntax, you can use the block form:
     runs-on:
-      group: GHA-Gen-Qlnx-Stg-SelfHosted-RG
-      labels: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
-    # Or this alternative line if you don't need group:
-    # runs-on: [self-hosted, gen-stg-u2204-x64-large-od-ephem]
+      group: GHA-SSG-Prd-SelfHosted-RG
+      labels: [self-hosted,ssg-prd-u2204-x64-large-od-ephem]
+    
     outputs:
       workspace_path: ${{ steps.sync.outputs.workspace_path }}
     steps:
@@ -85,3 +84,43 @@ jobs:
           pr_ref: ${{ inputs.pr_ref }}
           pr_repo: ${{ inputs.pr_repo }}
           base_ref: ${{ inputs.base_ref }}
+
+      - name: Create file list for artifacts upload
+        shell: bash
+        run: |
+          workspace=${{ github.workspace }}
+          mkdir -p $workspace/../artifacts
+          touch $workspace/../artifacts/file_list.txt
+          cd $workspace/MINKIPC_LIBS
+          tar -cJf ${{ github.workspace }}/artifacts.tar.xz usr/local
+          echo "${{ github.workspace }}/artifacts.tar.xz" >> $workspace/../artifacts/file_list.txt
+
+      - name: Upload artifacts
+        id: upload-artifacts
+        uses: qualcomm/minkipc/.github/actions/aws_s3_helper@main
+        with:
+          s3_bucket:  qli-prd-ssg-gh-artifacts
+          local_file: ${{ github.workspace }}/../artifacts/file_list.txt
+          mode: multi-upload
+
+      - name: Clean up
+        run: |
+          rm -rf ${{ github.workspace }}/../artifacts
+
+      - name: Update summary
+        if: success() || failure()
+        shell: bash
+        run: |
+          if [ ${{ steps.build_minkipc }} == 'success' ]; then
+            echo "Build was successful"
+            summary=":heavy_check_mark: Build Success"
+          else
+            echo "Build failed"
+            summary=":x: Build Failed"
+          fi
+          SUMMARY='
+          <details><summary><i>Build Summary</i></summary>
+          '${summary}'
+          </details>
+          '
+          echo -e "$SUMMARY" >> $GITHUB_STEP_SUMMARY
