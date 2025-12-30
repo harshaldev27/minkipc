@@ -107,11 +107,11 @@ jobs:
         run: |
           rm -rf ${{ github.workspace }}/../artifacts
 
-      - name: Update summary
+      - name: Update minkipc summary
         if: success() || failure()
         shell: bash
         run: |
-          if [ ${{ steps.build_minkipc }} == 'success' ]; then
+          if [ "${{ job.status }}" == 'success' ]; then
             echo "Build was successful"
             summary=":heavy_check_mark: Build Success"
           else
@@ -124,3 +124,4 @@ jobs:
           </details>
           '
           echo -e "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
