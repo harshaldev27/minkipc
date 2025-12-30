@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   RUN-ARMOR:
-    runs-on: ubuntu-22.04
+    runs-on:
+      group: GHA-SSG-Prd-SelfHosted-RG
+      labels: [self-hosted,ssg-prd-u2204-x64-large-od-ephem]
     steps:
       - uses: actions/checkout@v4
       - name: Set event variables
@@ -39,3 +41,4 @@ jobs:
           ref:        ${{ steps.ev.outputs.ref }}
           repo:       ${{ steps.ev.outputs.repo }}
           branch-name: ${{ steps.ev.outputs.branch_name }}
+
