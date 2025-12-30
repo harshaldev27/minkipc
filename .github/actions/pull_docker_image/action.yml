@@ -19,13 +19,13 @@ runs:
       shell: bash
       run: |
         aws ecr get-login-password --region us-west-2 \
-        | docker login --username AWS --password-stdin 533423057806.dkr.ecr.us-west-2.amazonaws.com
+        | docker login --username AWS --password-stdin 418295714268.dkr.ecr.us-west-2.amazonaws.com
         echo "Login successful."
 
     - name: Pull Docker image
       shell: bash
       run: |
         echo "Pulling Docker image: ${{ inputs.image }}"
-        docker pull 533423057806.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }}
+        docker pull 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }}
         echo "Docker image pulled successfully:"
-        docker tag 533423057806.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }} ssg-image:${{ inputs.tag }}
+        docker tag 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }} ssg-image:${{ inputs.tag }}
