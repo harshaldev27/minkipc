@@ -107,7 +107,7 @@ jobs:
         run: |
           rm -rf ${{ github.workspace }}/../artifacts
 
-      - name: Update minkipc summary
+      - name: Update minkipc build summary
         if: success() || failure()
         shell: bash
         run: |

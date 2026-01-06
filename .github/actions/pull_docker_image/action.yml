@@ -26,6 +26,6 @@ runs:
       shell: bash
       run: |
         echo "Pulling Docker image: ${{ inputs.image }}"
-        docker pull 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }}
+        docker pull 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg/${{ inputs.image }}
         echo "Docker image pulled successfully:"
-        docker tag 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg-image/${{ inputs.image }} ssg-image:${{ inputs.tag }}
+        docker tag 418295714268.dkr.ecr.us-west-2.amazonaws.com/ssg/${{ inputs.image }} ssg-image:${{ inputs.tag }}
