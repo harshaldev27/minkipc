@@ -39,7 +39,7 @@ on:
       modified_tar_name:
         required: false
         type: string
-        default: 'qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz'
+        default: 'ssg-qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz'
 
     outputs:
       s3_location:
@@ -47,8 +47,8 @@ on:
         value: ${{ jobs.build.outputs.s3_location }}
 
 env:
-  RB3GEN2_ROOTFS_KEY: qualcomm-linux-stg/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
-  S3_BUCKET: qli-stg-gen-qlnx-gh-artifacts
+  RB3GEN2_ROOTFS_KEY: qualcomm/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+  S3_BUCKET: qli-prd-ssg-gh-artifacts
 
 jobs:
   build:
@@ -95,7 +95,6 @@ jobs:
           base_ref: ${{ inputs.base_ref }}
 
       - name: Create file list for artifacts upload
-        id: create_build_tar
         shell: bash
         run: |
           workspace=${{ github.workspace }}
