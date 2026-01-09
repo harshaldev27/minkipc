@@ -36,6 +36,11 @@ on:
         description: Optional base reference to use for building
         default: ${{ github.ref_name }}
 
+      modified_tar_name:
+        required: false
+        type: string
+        default: 'qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz'
+
     outputs:
       s3_location:
         description: "S3 location of uploaded artifacts"
