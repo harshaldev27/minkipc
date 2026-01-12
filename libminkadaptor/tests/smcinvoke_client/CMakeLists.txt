@@ -1,19 +1,5 @@
 project(smcinvoke_client CXX)
 
-# ''Packages''.
-
-# Append modules directory.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-set(QCBOR_DIR_HINT "" CACHE PATH "Hint path for QCBOR directory")
-
-find_package(QCBOR REQUIRED)
-if(NOT QCBOR_FOUND)
-	message(FATAL_ERROR "QCBOR not found")
-endif()
-
-include_directories(${QCBOR_INCLUDE_DIRS})
-
 # ''CXX configuration''.
 
 set(CMAKE_CXX_STANDARD 11)
@@ -86,7 +72,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE minkadaptor
-	PRIVATE ${QCBOR_LIBRARIES}
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_BINDIR}")
