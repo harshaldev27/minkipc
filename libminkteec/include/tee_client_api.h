@@ -83,6 +83,9 @@ typedef uint32_t TEEC_Result;
 /* An external event has caused a User Interface operation to be aborted */
 #define TEE_ERROR_EXTERNAL_CANCEL 0xFFFF0011
 
+/* Deprecated: not specified in client API, use TEE_ERROR_EXTERNAL_CANCEL intead. */
+#define TEEC_ERROR_EXTERNAL_CANCEL 0xFFFF0011
+
 /* Internal TEE error - documented for completeness*/
 #define TEE_ERROR_OVERFLOW 0xFFFF300F
 
