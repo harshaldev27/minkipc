@@ -53,6 +53,6 @@ runs:
               -DCMAKE_TOOLCHAIN_FILE=CMakeToolchain.txt \
               -DQCBOR_DIR_HINT=${GITHUB_WORKSPACE}/../LIBQCBOR/usr/local -DQCOMTEE_DIR_HINT=${GITHUB_WORKSPACE}/../QUIC_TEEC/usr/local/ 2>&1 | tee build.log
             cd build
-            make install DESTDIR="${GITHUB_WORKSPACE}/../LIBQCBOR"
+            make install DESTDIR="${GITHUB_WORKSPACE}/MINKIPC_LIBS"
             test ${PIPESTATUS[0]} -eq 0
           '

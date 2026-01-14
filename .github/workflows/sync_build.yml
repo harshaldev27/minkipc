@@ -36,10 +36,19 @@ on:
         description: Optional base reference to use for building
         default: ${{ github.ref_name }}
 
+      modified_tar_name:
+        required: false
+        type: string
+        default: 'ssg-qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz'
+
     outputs:
       s3_location:
         description: "S3 location of uploaded artifacts"
         value: ${{ jobs.build.outputs.s3_location }}
+
+env:
+  RB3GEN2_ROOTFS_KEY: qualcomm/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+  S3_BUCKET: qli-prd-ssg-gh-artifacts
 
 jobs:
   build:
@@ -92,36 +101,242 @@ jobs:
           mkdir -p $workspace/../artifacts
           touch $workspace/../artifacts/file_list.txt
           cd $workspace/MINKIPC_LIBS
-          tar -cJf ${{ github.workspace }}/artifacts.tar.xz usr/local
-          echo "${{ github.workspace }}/artifacts.tar.xz" >> $workspace/../artifacts/file_list.txt
+          tar -cJf ${{ github.workspace }}/Mink_artifacts.tar.xz usr/local
+          >> $workspace/../artifacts/file_list.txt
+          echo "${{ github.workspace }}/Mink_artifacts.tar.xz" >> $workspace/../artifacts/file_list.txt
 
-      - name: Upload artifacts
+      # --- Rootfs image handling ---
+      - name: Verify RB3 Gen2 rootfs image exists in S3
+        shell: bash
+        run: |
+          set -euxo pipefail
+          aws s3api head-object \
+            --bucket "${{ env.S3_BUCKET }}" \
+            --key "${{ env.RB3GEN2_ROOTFS_KEY }}" \
+            >/dev/null 2>&1 || {
+              echo "ERROR: S3 key ${{ env.RB3GEN2_ROOTFS_KEY }} not found in bucket ${{ env.S3_BUCKET }}." >&2
+              exit 1
+            }
+
+      - name: Download RB3 Gen2 rootfs image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          aws s3 cp "s3://${{ env.S3_BUCKET }}/${{ env.RB3GEN2_ROOTFS_KEY }}" .
+          ls -lh "./qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz"
+
+      # --- Normalize & record original tar top-level entries ---
+      - name: Inspect original tar top-level entries (normalized)
+        id: orig_tar_meta
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ORIG_TAR="./qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz"
+          mapfile -t TOPLEVELS < <(
+            tar -tzf "${ORIG_TAR}" \
+            | sed -E 's#^\./##' \
+            | awk -F/ '{print $1}' \
+            | awk 'NF && $0!="."' \
+            | sort -u
+          )
+          if [ ${#TOPLEVELS[@]} -eq 0 ]; then
+            echo "ERROR: No entries found in original tar" >&2
+            exit 1
+          fi
+          echo "Original tar normalized top-level entries:"
+          printf '%s\n' "${TOPLEVELS[@]}"
+          echo "TOPLEVELS=${TOPLEVELS[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract RB3 Gen2 rootfs image (non-destructive)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Extract directly into current workspace (no extra 'rootfs/' folder)
+          tar -xzf qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+          echo "Extracted files (workspace top-level):"
+          ls -la | sed -n '1,200p'
+          echo "Expected top-level entries from original tar:"
+          echo "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+
+      # --- Locate rootfs image and capture mtime BEFORE modification ---
+      - name: Locate rootfs image
+        id: locate_img
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="$(find . -maxdepth 4 -type f \( -name 'rootfs*.img' -o -name '*.ext4' \) | head -n1 || true)"
+          if [ -z "${IMG_PATH}" ]; then
+            echo "ERROR: Could not find rootfs*.img (or *.ext4) in workspace." >&2
+            echo "Workspace contents (top-level):"; ls -la | sed -n '1,200p'
+            exit 1
+          fi
+          echo "IMG_PATH=${IMG_PATH}" >> "$GITHUB_OUTPUT"
+          echo "IMG_PATH=${IMG_PATH}" >> "$GITHUB_ENV"
+
+          echo "==> File type:"
+          file "${IMG_PATH}" || true
+
+          echo "==> Pre-modification timestamp of the image file:"
+          ls -la --time-style=full-iso "${IMG_PATH}"
+
+      - name: Capture image mtime (before)
+        id: mtime_before
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
+          MTIME_BEFORE="$(stat -c '%y' "${IMG_PATH}")"
+          echo "mtime_before=${MTIME_BEFORE}" >> "$GITHUB_OUTPUT"
+
+      # --- Modify rootfs INSIDE Docker (mount -o loop, copy, umount) ---
+      - name: Modify rootfs inside Docker
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Run as root in a privileged container, bind-mount the workspace
+          docker run --rm --privileged --user root \
+            -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
+            -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            "${{ inputs.docker_image }}" \
+            bash -lc '
+              set -euxo pipefail
+
+              # Locate image inside container
+              IMG_PATH="$(find ${GITHUB_WORKSPACE} -maxdepth 4 -type f \( -name "rootfs*.img" -o -name "*.ext4" \) | head -n1 || true)"
+              if [ -z "${IMG_PATH}" ]; then
+                echo "ERROR: Could not find rootfs image in ${GITHUB_WORKSPACE}" >&2
+                ls -la ${GITHUB_WORKSPACE} | sed -n "1,200p"
+                exit 1
+              fi
+              echo "Container: IMG_PATH=${IMG_PATH}"
+              ls -la ${GITHUB_WORKSPACE}/MINKIPC_LIBS/ | sed -n "1,200p"
+
+              # Detect build output root inside container
+              CANDIDATES=(
+                "${GITHUB_WORKSPACE}/MINKIPC_LIBS/"
+              )
+              SRC_ROOT=""
+              for cand in "${CANDIDATES[@]}"; do
+                if [ -d "${cand}/usr" ]; then
+                  SRC_ROOT="${cand}"
+                  break
+                fi
+              done
+              if [ -z "${SRC_ROOT}" ]; then
+                echo "ERROR: No build output root found with usr/ or etc/ under /workspace" >&2
+                ls -la ${GITHUB_WORKSPACE} | sed -n "1,200p"
+                exit 1
+              fi
+              echo "Container: Selected SRC_ROOT=${SRC_ROOT}"
+              ls -la --time-style=full-iso "${SRC_ROOT}" | sed -n "1,100p"
+
+              # Mount the image using loop (requires --privileged)
+              MNT_DIR="/mnt/rootfs"
+              mkdir -p "${MNT_DIR}"
+              mount -o rw,loop "${IMG_PATH}" "${MNT_DIR}"
+
+              echo "Container: Mounted filesystem details:"
+              df -hT "${MNT_DIR}" || true
+
+              echo "Container: Before copy timestamps:"
+              ls -la --time-style=full-iso "${MNT_DIR}/usr" || true
+
+              # Copy with attributes preserved
+              copy_dir_contents () {
+                local src_dir="$1"
+                local dest_dir="$2"
+                if [ -d "${src_dir}" ]; then
+                  echo "Copying ${src_dir}/. -> ${dest_dir}/"
+                  mkdir -p "${dest_dir}"
+                  cp -av "${src_dir}/." "${dest_dir}/"
+                else
+                  echo "WARN: ${src_dir} not found. Skipping."
+                fi
+              }
+
+              copy_dir_contents "${SRC_ROOT}/usr" "${MNT_DIR}/usr"
+
+              sync
+
+              echo "Container: After copy timestamps:"
+              ls -la --time-style=full-iso "${MNT_DIR}/usr" | sed -n "1,150p" || true
+
+              # Unmount cleanly
+              umount "${MNT_DIR}"
+            '
+      - name: Verify image mtime changed (after)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
+          MTIME_AFTER="$(stat -c '%y' "${IMG_PATH}")"
+          echo "Before: ${{ steps.mtime_before.outputs.mtime_before }}"
+          echo "After:  ${MTIME_AFTER}"
+          if [ "${MTIME_AFTER}" = "${{ steps.mtime_before.outputs.mtime_before }}" ]; then
+            echo "ERROR: Image mtime did not change — copy may have failed." >&2
+            exit 1
+          fi
+          echo "==> Post-modification timestamp of the image file:"
+          ls -la --time-style=full-iso "${IMG_PATH}"
+          
+      # --- Repack extracted folder (preserve original top-level layout & name) ---
+      - name: Create modified rootfs tar (preserve layout & name)
+        id: repack_rootfs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          : "${GITHUB_WORKSPACE:=${{ github.workspace }}}"
+          ART_DIR="${GITHUB_WORKSPACE}/artifacts"
+          mkdir -p "${ART_DIR}"
+
+          MOD_TAR="${ART_DIR}/${{ inputs.modified_tar_name }}"
+
+          # Read normalized top-levels
+          IFS=' ' read -r -a TOPLEVELS <<< "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+
+          cd "${GITHUB_WORKSPACE}"
+
+          # Exclude artifacts dir and the output tar itself to avoid "file changed as we read it"
+          tar --exclude='./artifacts' \
+              --exclude="${MOD_TAR}" \
+              -czf "${MOD_TAR}" "${TOPLEVELS[@]}"
+
+          echo "modified_tar=${MOD_TAR}" >> "$GITHUB_OUTPUT"
+          echo "==> Verify tar contents (first 100):"
+          tar -tzf "${MOD_TAR}" | sed -n '1,100p'
+
+      # === Upload BOTH build.tar and modified rootfs tar to S3 in a SINGLE call (avoid 409 conflicts) ===
+      - name: Create file list (build.tar + modified rootfs tar)
+        id: make_file_list_all
+        shell: bash
+        run: |
+          set -euxo pipefail
+          workspace=${{ github.workspace }}
+          echo "${{ steps.repack_rootfs.outputs.modified_tar }}" >> $workspace/../artifacts/file_list.txt
+          echo "==> Combined artifacts list:"; cat $workspace/../artifacts/file_list.txt
+          echo "file_list_all=$workspace/../artifacts/file_list.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Upload final artifacts
         id: upload-artifacts
         uses: qualcomm/minkipc/.github/actions/aws_s3_helper@main
         with:
-          s3_bucket:  qli-prd-ssg-gh-artifacts
+          s3_bucket: qli-prd-ssg-gh-artifacts
           local_file: ${{ github.workspace }}/../artifacts/file_list.txt
           mode: multi-upload
 
       - name: Clean up
         run: |
-          rm -rf ${{ github.workspace }}/../artifacts
+          rm -rf artifacts
 
-      - name: Update minkipc build summary
-        if: success() || failure()
-        shell: bash
+  publish_summary:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Publish build summary
         run: |
-          if [ "${{ job.status }}" == 'success' ]; then
-            echo "Build was successful"
-            summary=":heavy_check_mark: Build Success"
-          else
-            echo "Build failed"
-            summary=":x: Build Failed"
-          fi
-          SUMMARY='
-          <details><summary><i>Build Summary</i></summary>
-          '${summary}'
-          </details>
-          '
-          echo -e "$SUMMARY" >> $GITHUB_STEP_SUMMARY
-
+          echo "# Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Build successful!" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker image: ${{ inputs.docker_image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Uploaded to S3 bucket: ${{ env.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Upload location: qualcomm-linux-stg/minkipc/${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_STEP_SUMMARY
