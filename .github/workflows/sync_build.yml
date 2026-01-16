@@ -47,7 +47,7 @@ on:
         value: ${{ jobs.build.outputs.s3_location }}
 
 env:
-  RB3GEN2_ROOTFS_KEY: qualcomm/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+  RB3GEN2_ROOTFS_KEY: qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
   S3_BUCKET: qli-prd-ssg-gh-artifacts
 
 jobs:
@@ -339,4 +339,4 @@ jobs:
           echo "Build successful!" >> $GITHUB_STEP_SUMMARY
           echo "- Docker image: ${{ inputs.docker_image }}" >> $GITHUB_STEP_SUMMARY
           echo "- Uploaded to S3 bucket: ${{ env.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Upload location: qualcomm-linux-stg/minkipc/${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Upload location: qualcomm/minkipc/${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_STEP_SUMMARY
