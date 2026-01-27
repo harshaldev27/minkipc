@@ -1,0 +1,3 @@
+[submodule "optee-client/optee_client"]
+	path = optee-client/optee_client
+	url = git@github.com:OP-TEE/optee_client.git
