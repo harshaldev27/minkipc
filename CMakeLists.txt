@@ -21,6 +21,9 @@ option(CFG_USE_PKGCONFIG "Use pkg-config for discovering install target director
 # Build RPMB listener
 option(BUILD_RPMB_LISTENER "Build RPMB Listener" TRUE)
 
+# Build PKCS-11
+option(BUILD_PKCS11 "Build PKCS#11" TRUE)
+
 include(GNUInstallDirs)
 
 set(MINKIDLC_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/idlc" CACHE PATH "Directory containing the idlc executable")
@@ -66,4 +69,8 @@ endif()
 
 if(BUILD_RPMB_LISTENER)
 	add_subdirectory(listeners/librpmbservice)
+endif()
+
+if (BUILD_PKCS11)
+	add_subdirectory(optee-client)
 endif()
