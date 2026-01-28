@@ -73,4 +73,8 @@ endif()
 
 if (BUILD_PKCS11)
 	add_subdirectory(optee-client)
+	if (BUILD_UNITTEST)
+		add_subdirectory(optee-test)
+	endif()
 endif()
+
