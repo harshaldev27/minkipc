@@ -254,7 +254,8 @@ jobs:
                 fi
               }
 
-              copy_dir_contents "${SRC_ROOT}/usr" "${MNT_DIR}/usr"
+              copy_dir_contents "${SRC_ROOT}/usr/local/lib" "${MNT_DIR}/usr/lib"
+              copy_dir_contents "${SRC_ROOT}/usr/local/bin" "${MNT_DIR}/usr/bin"
 
               sync
 
