@@ -20,6 +20,7 @@ add_compile_options (
 	-Wwrite-strings -fPIC
  	-Wno-missing-field-initializers
 	-Wno-unused-parameter -Wno-alloc-size
+	-Wno-unterminated-string-initialization
 )
 if(CFG_WERROR)
     add_compile_options(-Werror)
