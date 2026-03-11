@@ -30,6 +30,7 @@ set(MINKIDLC_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/idlc" CACHE PATH "Directory co
 set(SYSTEMD_UNIT_DIR "" CACHE PATH "Directory containing the systemd unit path")
 set(UDEV_DIR "" CACHE PATH "Directory containing the UDEV path")
 set(MINKIPC_LIBEXEC_DIR "" CACHE PATH "Directory containing the libexec script/binaries path")
+set(PERSIST_MOUNT_UNIT "" CACHE PATH "Name of the systemd unit responsible for mounting the persist partition")
 
 if ("${MINKIDLC_BIN_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/idlc")
 	file(DOWNLOAD
