@@ -1,4 +1,4 @@
-project(ckteec
+project(ckqteec
 	VERSION 0.1.0
 	LANGUAGES C)
 
@@ -64,9 +64,9 @@ set(SRC
 ################################################################################
 # Built library
 ################################################################################
-add_library(ckteec SHARED ${SRC})
+add_library(ckqteec SHARED ${SRC})
 
-set_target_properties(ckteec PROPERTIES
+set_target_properties(ckqteec PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
 )
@@ -74,7 +74,7 @@ set_target_properties(ckteec PROPERTIES
 ################################################################################
 # Flags always set
 ################################################################################
-target_compile_definitions(ckteec
+target_compile_definitions(ckqteec
 	PRIVATE -D_GNU_SOURCE
 	PRIVATE -DBINARY_PREFIX="LT"
 )
@@ -86,7 +86,7 @@ target_compile_definitions(ckteec
 ################################################################################
 # Public and private header and library dependencies
 ################################################################################
-target_include_directories(ckteec
+target_include_directories(ckqteec
 	PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/optee_client/libckteec/include>
 	$<INSTALL_INTERFACE:optee_client/libckteec/include>
 	PRIVATE optee_client/libckteec/src
@@ -94,7 +94,7 @@ target_include_directories(ckteec
 	PRIVATE include
 )
 
-target_link_libraries(ckteec
+target_link_libraries(ckqteec
 	PRIVATE pthread
 	PRIVATE minkteec
 	PRIVATE minkadaptor
@@ -104,7 +104,7 @@ target_link_libraries(ckteec
 ################################################################################
 # Install targets
 ################################################################################
-install(TARGETS ckteec
+install(TARGETS ckqteec
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 

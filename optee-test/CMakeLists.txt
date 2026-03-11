@@ -1,4 +1,4 @@
-project (xtest C)
+project (xtest_qtee C)
 
 option(CFG_WERROR "Build with -Werror" FALSE)
 option(CFG_PKCS11_TA "Build with PKCS11" TRUE)
@@ -146,7 +146,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries (${PROJECT_NAME}
 	PRIVATE m
 	PRIVATE xtest-ta-headers
-	PRIVATE ckteec
+	PRIVATE ckqteec
 	PRIVATE minkteec
 	PRIVATE minkadaptor
 	PRIVATE ${CMAKE_THREAD_LIBS_INIT}
