@@ -1,6 +1,6 @@
 [submodule "optee-client/optee_client"]
 	path = optee-client/optee_client
-	url = git@github.com:OP-TEE/optee_client.git
+	url = https://github.com/OP-TEE/optee_client.git
 [submodule "optee-test/optee_test"]
 	path = optee-test/optee_test
-	url = git@github.com:OP-TEE/optee_test.git
+	url = https://github.com/OP-TEE/optee_test.git
