@@ -3,6 +3,8 @@
 [Unit]
 Description=SFS Configuration Service
 SourcePath=@MINKIPC_LIBEXEC_DIR@/sfs_config
+After=@PERSIST_MOUNT_UNIT@
+Wants=@PERSIST_MOUNT_UNIT@
 
 [Service]
 Type=oneshot
