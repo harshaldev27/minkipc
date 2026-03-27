@@ -26,6 +26,7 @@ runs:
         fetch-depth: 0  # Fetch all history for all branches and tags
         ref: ${{ inputs.pr_ref }}
         repository: ${{ inputs.pr_repo }}
+        submodules: recursive
 
     - name: Checkout master (push)
       if: ${{ (inputs.event_name == 'push' || inputs.event_name == 'workflow_call') && inputs.base_ref != '' }}
