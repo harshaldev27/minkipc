@@ -19,10 +19,10 @@ if [ -e /var/lib/tee ]; then
     chmod o+rwx /var/lib/tee/qtee_supplicant
 fi
 
-if [ ! -d /var/tmp/qtee_supplicant/vendor/tzstorage ]; then
-    echo "Creating /var/tmp/qtee_supplicant/vendor/tzstorage"
-    mkdir -p /var/tmp/qtee_supplicant/vendor/tzstorage
+if [ ! -d /var/lib/qtee_supplicant/vendor/tzstorage ]; then
+    echo "Creating /var/lib/qtee_supplicant/vendor/tzstorage"
+    mkdir -p /var/lib/qtee_supplicant/vendor/tzstorage
 fi
-chmod o+rwx /var/tmp/qtee_supplicant/vendor/tzstorage
+chmod o+rwx /var/lib/qtee_supplicant/vendor/tzstorage
 
 exit 0
