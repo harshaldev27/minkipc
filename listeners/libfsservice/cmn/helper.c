@@ -146,6 +146,51 @@ static void prepend_path(const char *prefix, const char *old_path,
 		strlcat(new_path, old_path, TZ_FILE_DIR_LEN);
 }
 
+/**
+ * @brief Check if the persist path needs to be modified.
+
+ * Some Trusted Applications pass legacy mount point paths for persist partition
+ * such as /var/persist. This function checks if the mount point path needs
+ * to be updated to re-direct to a new path, such as /var/lib/tee.
+ *
+ * @param path The path possibly prefixed with legacy mount point.
+ */
+static bool is_persist_path_need_modify(const char *path)
+{
+	int compare = 0;
+
+	if (!path)
+		return false;
+
+	compare = strncmp(OLD_PERSIST_MOUNT_PATH, path, strlen(OLD_PERSIST_MOUNT_PATH));
+	if (compare == 0) {
+		MSGD("%s is an old persist mount path\n", path);
+		return true;
+	}
+
+	MSGD("%s is not an old persist mount path\n", path);
+	return false;
+}
+
+/**
+ * @brief Modify the persist path to re-direct to a new mount point.
+
+ * Some Trusted Applications pass legacy mount point paths for persist partition
+ * such as /var/persist. This function modifies the mount point path to
+ * re-direct to a new path, such as /var/lib/tee.
+ *
+ * @param prefix The new mount point path (e.g., /var/lib/tee).
+ * @param old_path The original path with the legacy mount point.
+ * @param new_path The buffer to store the new path.
+ */
+static void modify_path(const char *prefix, const char *old_path,
+                        char *new_path)
+{
+	memset(new_path, 0, TZ_FILE_DIR_LEN);
+	strlcpy(new_path, prefix, TZ_FILE_DIR_LEN);
+	strlcat(new_path, old_path + strlen(OLD_PERSIST_MOUNT_PATH), TZ_FILE_DIR_LEN);
+}
+
 char *get_resolved_path(char *old_path, size_t old_len, char *new_path,
 			size_t new_len)
 {
@@ -169,6 +214,11 @@ char *get_resolved_path(char *old_path, size_t old_len, char *new_path,
 		     old_path, new_path);
 		MSGD("get_resolved_path : old_pathlen =%zu, new_vendor_path_len=%zu\n",
 		     strlen(old_path), strlen(new_path));
+		return new_path;
+	}
+
+	if (is_persist_path_need_modify(old_path)) {
+		modify_path(PERSIST_MOUNT_PATH, old_path, new_path);
 		return new_path;
 	}
 

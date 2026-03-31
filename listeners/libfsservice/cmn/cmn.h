@@ -34,6 +34,7 @@
 #define DATA_PATH               "/var/lib/qtee_supplicant/vendor/tzstorage/"
 #define PERSIST_PATH            "/var/lib/tee/qtee_supplicant/"
 #define PERSIST_MOUNT_PATH      "/var/lib/tee"
+#define OLD_PERSIST_MOUNT_PATH  "/var/persist"
 
 /* Secure File System - version 2 */
 #define GP_FS_VERSION           2
