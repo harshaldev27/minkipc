@@ -57,6 +57,12 @@ The following CMake options are available for configuring this package:
 
 `-DBUILD_MINKTEEC=ON` - Build Mink TEEC library
 
+`-DCHECK_PERSIST_MOUNTED=OFF` - Allow distros to disable checking whether persist partition is mounted. This option should always be enabled by default since QTEE always assumes that a separate persist partition is mounted and expects the OS to fail Secure File System operations if this is not the case. Only in exceptional circumstances where the platform cannot support a separate persist partition, this option should be disabled. When a separate persist partition is not available, Secure File System listener will create files under a rootfs directory. Using the rootfs to manage Secure File System files has the following associated risks:
+- File corruption during over-the-air rootfs updates.
+- File deletion during OS re-installation.
+
+When file corruption or deletion happens, QTEE will be forced to reset to a clean empty state and forget about the files. Recovery is not possible in these scenarios.
+
 ## Tests
 List of available tests for each module are available in the module's README file.
 

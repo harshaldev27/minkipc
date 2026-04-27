@@ -27,6 +27,7 @@ static char *gp_whitelist_paths[] = {
 	"/data/qwes/licenses/"
 };
 
+#ifdef CHECK_PERSIST_MOUNTED
 bool is_persist_partition_mounted(void)
 {
 	bool ret = false;
@@ -51,6 +52,12 @@ exit:
 		endmntent(f);
 	return ret;
 }
+#else
+bool is_persist_partition_mounted(void)
+{
+	return true;
+}
+#endif
 
 int check_dir_path(const char *path)
 {

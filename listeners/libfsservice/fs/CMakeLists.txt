@@ -39,6 +39,11 @@ target_include_directories(fsservice
 	PRIVATE ../../listenercbo/idl
 )
 
+if(CHECK_PERSIST_MOUNTED)
+        target_compile_definitions(fsservice
+                PRIVATE -DCHECK_PERSIST_MOUNTED)
+endif()
+
 target_link_libraries(fsservice
 	PRIVATE minkadaptor
 )

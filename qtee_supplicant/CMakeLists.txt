@@ -47,7 +47,11 @@ target_link_libraries(${PROJECT_NAME}
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
-configure_file(sfs_config.in sfs_config @ONLY)
+if (CHECK_PERSIST_MOUNTED)
+	configure_file(sfs_config.in sfs_config @ONLY)
+else()
+	configure_file(sfs_config_omit_persist.in sfs_config @ONLY)
+endif()
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/sfs_config" DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
 
 if (DEFINED SYSTEMD_UNIT_DIR AND NOT "${SYSTEMD_UNIT_DIR}" STREQUAL "")
@@ -56,6 +60,7 @@ if (DEFINED SYSTEMD_UNIT_DIR AND NOT "${SYSTEMD_UNIT_DIR}" STREQUAL "")
 	configure_file(sfsconfig.service.in sfsconfig.service @ONLY)
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/sfsconfig.service" DESTINATION "${SYSTEMD_UNIT_DIR}")
 endif()
+
 if (DEFINED UDEV_DIR AND NOT "${UDEV_DIR}" STREQUAL "")
 	configure_file(qcomtee-udev.rules.in 99-qcomtee-udev.rules @ONLY)
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/99-qcomtee-udev.rules" DESTINATION ${UDEV_DIR})

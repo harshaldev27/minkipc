@@ -1,0 +1,26 @@
+#!/bin/sh
+#==============================================================================
+# FILE: sfs_config_omit_persist
+#
+# DESCRIPTION:
+# create files and give permissions to the files and directories needed by
+# secure file system. Omits checking if persist partition is mounted.
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#==============================================================================
+set -e
+
+if [ ! -d /var/lib/tee/qtee_supplicant ]; then
+     echo "Creating /var/lib/tee/qtee_supplicant"
+     mkdir -p /var/lib/tee/qtee_supplicant
+fi
+chmod o+rwx /var/lib/tee/qtee_supplicant
+
+if [ ! -d /var/lib/qtee_supplicant/vendor/tzstorage ]; then
+    echo "Creating /var/lib/qtee_supplicant/vendor/tzstorage"
+    mkdir -p /var/lib/qtee_supplicant/vendor/tzstorage
+fi
+chmod o+rwx /var/lib/qtee_supplicant/vendor/tzstorage
+
+exit 0

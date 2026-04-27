@@ -24,6 +24,8 @@ option(BUILD_RPMB_LISTENER "Build RPMB Listener" TRUE)
 # Build PKCS-11
 option(BUILD_PKCS11 "Build PKCS#11" TRUE)
 
+option(CHECK_PERSIST_MOUNTED "Check if the persist partition is mounted" TRUE)
+
 include(GNUInstallDirs)
 
 set(MINKIDLC_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/idlc" CACHE PATH "Directory containing the idlc executable")
